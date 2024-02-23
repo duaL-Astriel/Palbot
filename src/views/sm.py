@@ -1,6 +1,6 @@
 import discord, asyncio
 from discord.ui import View, Button, button
-from rcon.source import rcon
+from rcon.source import Client
 from ..lib.bot import PalBot
 
 class ShutdownConfirmationView(View):
@@ -10,20 +10,25 @@ class ShutdownConfirmationView(View):
 		self.bot = PalBot()
 		super().__init__(timeout=30)
 	
-	@button(label="Bestätigen", style=discord.ButtonStyle.danger)
+	@button(label="Bestätigen", style=discord.ButtonStyle.green)
 	async def sconfirmation(self, interaction: discord.Interaction, button: Button):
 		
 		if self.seconds != None:
-			embed = discord.Embed(title="Erfolgreich", description=f"Server wird in {self.seconds} sekunden heruntergefahren\n{f'Nachricht: {self.msg}' if self.msg is not None else ''}", color=discord.Colour.green())
-			await interaction.response.edit_message(embed=embed, view=None)
-			await asyncio.sleep(float(self.seconds))
-			await rcon("shutdown", host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd)
-		else: 
-			await rcon("shutdown", host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd)
+			with Client(host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd) as client:
+				# response = await client.run("Shutdown %d %s", self.seconds, self.msg)
+				response = await client.run(command="shutdown")
+			print(response)
+			# await Client("shutdown", host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd)
 			embed = discord.Embed(title="Erfolgreich", description="Server wurde erfolgreich heruntergefahren")
 			await interaction.response.edit_message(embed=embed, view=None)
+		else: 
+			with Client(host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd) as client:
+				response = await client.run(command="shutdown")
+				embed = discord.Embed(title="Erfolgreich", description="Server wurde erfolgreich heruntergefahren.")
+				await interaction.response.edit_message(embed=embed, view=None)
+				print(response)
 	
-	@button(label="Ablehnen", style=discord.ButtonStyle.green)
+	@button(label="Abbrechen", style=discord.ButtonStyle.danger)
 	async def sdenied(self, interaction: discord.Interaction, button: Button):
-		embed = discord.Embed(title="Abgebrochen", description="Shutdown abgebrochen, server läuft noch.", color=discord.Colour.red())
+		embed = discord.Embed(title="Abgebrochen", description="Shutdown vom Benutzer abgebrochen.")
 		await interaction.response.edit_message(embed=embed, view=None)

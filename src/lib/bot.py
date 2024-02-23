@@ -10,14 +10,16 @@ from ..cogs import EXTENSIONS
 class PalBot(commands.Bot):
 	def __init__(self) -> None:
 		intent = discord.Intents.none()
+		intent.guilds = True
 		intent.members = False
-		self.token = os.environ["DISCORD_BOT_TOKEN"]
-		self.pwhost =  os.environ["PALWORLD_RCON_HOST"]
-		self.pwpasswrd = os.environ["PALWORLD_RCON_PASSWORD"]
-		self.pwport = os.environ["PALWORLD_RCON_PORT"]
-		super().__init__("!pb", help_command=None, intents=intent, tree_cls=CommandTree)
+		self.token = os.getenv("DISCORD_BOT_TOKEN")
+		self.pwhost =  os.getenv("PALWORLD_RCON_HOST")
+		self.pwpasswrd = os.getenv("PALWORLD_RCON_PASSWORD")
+		self.pwport = int(os.getenv("PALWORLD_RCON_PORT"))
+		self.srvpath = os.getenv("SERVER_PATH")
+		self.prefix = os.getenv("DISCORD_COMMAND_PREFIX")
+		super().__init__(self.prefix, help_command=None, intents=intent, tree_cls=CommandTree)
 
 	async def setup_hook(self):
 		for extension in EXTENSIONS:
 			await self.load_extension(extension)
-
