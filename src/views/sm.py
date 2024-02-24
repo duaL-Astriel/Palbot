@@ -1,34 +1,40 @@
 import discord, asyncio
 from discord.ui import View, Button, button
-from rcon.source import Client
+from ..lib.client import Client
 from ..lib.bot import PalBot
+from ..lib.check_uptime import is_application_running
+
+PALWORLD_APPLICATION_NAME = "PalServer-Win64-Test-Cmd.exe"
 
 class ShutdownConfirmationView(View):
 	def __init__(self, seconds: int=None, message=None):
-		self.seconds = seconds
-		self.msg = message
+		self.seconds: str = seconds
+		self.msg: str = message
 		self.bot = PalBot()
 		super().__init__(timeout=30)
 	
 	@button(label="Bestätigen", style=discord.ButtonStyle.green)
 	async def sconfirmation(self, interaction: discord.Interaction, button: Button):
-		
-		if self.seconds != None:
-			with Client(host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd) as client:
-				# response = await client.run("Shutdown %d %s", self.seconds, self.msg)
-				response = await client.run(command="shutdown")
-			print(response)
-			# await Client("shutdown", host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd)
-			embed = discord.Embed(title="Erfolgreich", description="Server wurde erfolgreich heruntergefahren")
-			await interaction.response.edit_message(embed=embed, view=None)
-		else: 
-			with Client(host=self.bot.pwhost, port=self.bot.pwport, passwd=self.bot.pwpasswrd) as client:
-				response = await client.run(command="shutdown")
-				embed = discord.Embed(title="Erfolgreich", description="Server wurde erfolgreich heruntergefahren.")
-				await interaction.response.edit_message(embed=embed, view=None)
-				print(response)
+		await interaction.response.edit_message(embed=discord.Embed(title="Am Herunterfahren", description="Bitte warten. Server wird heruntergefahren."), view=None)
+		if not self.seconds:
+			self.seconds = 0
+		try:
+			rcon_client = Client()
+			# remove spaces
+			formatted_message = ""
+			if self.msg:
+				formatted_message = self.msg.replace(" ", "_")
+			response = rcon_client.shutdown(self.seconds, formatted_message)
+		except Exception as e:
+			print(f"Unable to shutdown game server: {e}")
+			await interaction.edit_original_response(embed=discord.Embed(title="Fehlgeschlagen!", description="Server konnte nicht heruntergefahren werden.\n" + response), view=None)
+			return
+			
+		await asyncio.sleep(float(3 + self.seconds))
+
+		if not is_application_running(PALWORLD_APPLICATION_NAME):
+			await interaction.edit_original_response(embed=discord.Embed(title="Erfolgreich!", description="Server wurde erfolgreich heruntergefahren."), view=None)
 	
 	@button(label="Abbrechen", style=discord.ButtonStyle.danger)
 	async def sdenied(self, interaction: discord.Interaction, button: Button):
-		embed = discord.Embed(title="Abgebrochen", description="Shutdown vom Benutzer abgebrochen.")
-		await interaction.response.edit_message(embed=embed, view=None)
+		await interaction.edit_original_response(embed=discord.Embed(title="Abgebrochen", description="Shutdown vom Benutzer abgebrochen."), view=None)

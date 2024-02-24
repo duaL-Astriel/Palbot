@@ -1,12 +1,14 @@
-import discord, os, platform, pathlib, asyncio
+import discord, platform, pathlib, asyncio, subprocess
 from discord.ext import commands
 from discord import app_commands
 
-from ..lib.checkUptime import check_port
+from ..lib.check_uptime import udp_ping, is_application_running
+from ..lib.service_running import is_service_running
 
 from ..views.sm import ShutdownConfirmationView
 
-PALWORLD_RCON_HOST = "127.0.0.1"
+PALWORLD_APPLICATION_NAME = "PalServer-Win64-Test-Cmd.exe"
+PALWORLD_HOST = "127.0.0.1"
 PALWORLD_PORT = 8211
 SERVER_PATH = str(pathlib.Path(__file__).parents[3])
 
@@ -21,23 +23,32 @@ class ServerManagementCog(commands.Cog):
 
 	@servercommand.command(name="start", description="Startet den Palworld Server.")
 	async def sstart(self, interaction: discord.Interaction):
-		terminal = os.system
+		await interaction.response.send_message(embed=discord.Embed(title="Bitte warten", description="Server wird gestartet.", color=discord.Colour.blue()))
+		
 		if platform.system() == "Windows":
-			path = SERVER_PATH + "/start.bat"
+			start_command = SERVER_PATH + "/start.bat"
+			if is_application_running(PALWORLD_APPLICATION_NAME):
+				await interaction.edit_original_response(embed=discord.Embed(title="Server läuft bereits.", color=discord.Colour.red()))
+				return
+
 		elif platform.system() == "Linux":
-			path = "systemctl start palworld"
-		embed = discord.Embed(title="Bitte warten", description="Server wird gestartet.", color=discord.Colour.blue())
-		await interaction.response.send_message(embed=embed)
-		if check_port(PALWORLD_RCON_HOST, PALWORLD_PORT):
-			embed = discord.Embed(title="Server läuft bereits.", color=discord.Colour.red())
-			await interaction.edit_original_response(embed=embed)
-			return
-		terminal(path)
+			print("System is Linux")
+			start_command = "systemctl start palworld"
+			if is_service_running("palworld"):
+				await interaction.edit_original_response(embed=discord.Embed(title="Server läuft bereits.", color=discord.Colour.red()))
+				return
+		
+		result = subprocess.run(start_command, shell=True, capture_output=True, text=True)
+		if not result.stdout:
+			print(f"Command result: {result.stdout}")
 		await asyncio.sleep(float(10))
-		if check_port(PALWORLD_RCON_HOST, PALWORLD_PORT):
+
+		if udp_ping(PALWORLD_HOST, PALWORLD_PORT):
 			embed = discord.Embed(title="Starten erfolgreich!", colour=discord.Colour.green())
+
 		else:
-			embed = discord.Embed(title="Starten fehlgeschlagen!", description="Server konnte nicht gestartet werden.", colour=discord.Colour.red())
+			embed = discord.Embed(title="Starten fehlgeschlagen!", description=f"Server konnte nicht gestartet werden.\n{result.stdout}", colour=discord.Colour.red())
+			
 		await interaction.edit_original_response(embed=embed)
 
 	@servercommand.command(name="shutdown", description="Fährt den Server herunter.")

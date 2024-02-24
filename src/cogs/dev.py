@@ -11,8 +11,7 @@ class DevCog(commands.Cog):
 	@commands.command(name="sync")
 	async def sync(self, ctx: commands.Context):
 		synced = await self.bot.tree.sync()
-		embed = discord.Embed(title="Success", description=f"synced {len(synced)} commands", color=discord.Colour.green())
-		await ctx.send(embed=embed)
+		await ctx.send(embed=discord.Embed(title="Success", description=f"synced {len(synced)} commands", color=discord.Colour.green()))
 
 async def setup(bot):
 	await bot.add_cog(DevCog(bot))
