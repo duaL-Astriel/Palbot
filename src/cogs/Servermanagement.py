@@ -1,13 +1,14 @@
-import discord, platform, pathlib, asyncio, subprocess
+import os
+import discord, platform, pathlib, asyncio
 from discord.ext import commands
 from discord import app_commands
 
-from ..lib.check_uptime import udp_ping, is_application_running
-from ..lib.service_running import is_service_running
+from ..lib.check_uptime import is_application_running, is_service_running
 
 from ..views.sm import ShutdownConfirmationView
 
 PALWORLD_APPLICATION_NAME = "PalServer-Win64-Test-Cmd.exe"
+PALWORLD_SERVICE_NAME = "palworld"
 PALWORLD_HOST = "127.0.0.1"
 PALWORLD_PORT = 8211
 SERVER_PATH = str(pathlib.Path(__file__).parents[3])
@@ -23,36 +24,41 @@ class ServerManagementCog(commands.Cog):
 
 	@servercommand.command(name="start", description="Startet den Palworld Server.")
 	async def sstart(self, interaction: discord.Interaction):
-		await interaction.response.send_message(embed=discord.Embed(title="Bitte warten", description="Server wird gestartet.", color=discord.Colour.blue()))
+		await interaction.response.defer(thinking=True)
 		
+		if is_application_running(PALWORLD_APPLICATION_NAME) or is_service_running(PALWORLD_SERVICE_NAME):
+			print("Server start command received, but server is already running.")
+			await interaction.followup.send(embed=discord.Embed(title="Server läuft bereits.", color=discord.Colour.red()))
+			return
+		
+		print("Starting Palworld server...")
+		terminal = os.system
+
 		if platform.system() == "Windows":
-			start_command = SERVER_PATH + "/start.bat"
-			if is_application_running(PALWORLD_APPLICATION_NAME):
-				await interaction.edit_original_response(embed=discord.Embed(title="Server läuft bereits.", color=discord.Colour.red()))
-				return
+			print("System is Windows")
+			start_command = "C:/Users/Plex/Desktop/Palworld/start.bat"
 
 		elif platform.system() == "Linux":
 			print("System is Linux")
 			start_command = "systemctl start palworld"
-			if is_service_running("palworld"):
-				await interaction.edit_original_response(embed=discord.Embed(title="Server läuft bereits.", color=discord.Colour.red()))
-				return
 		
-		result = subprocess.run(start_command, shell=True, capture_output=True, text=True)
-		if not result.stdout:
-			print(f"Command result: {result.stdout}")
+		await interaction.followup.send(embed=discord.Embed(title="Bitte warten", description="Server wird gestartet.", color=discord.Colour.blue()))
+		terminal(start_command)
 		await asyncio.sleep(float(10))
 
-		if udp_ping(PALWORLD_HOST, PALWORLD_PORT):
+		if is_application_running(PALWORLD_APPLICATION_NAME) or is_service_running(PALWORLD_SERVICE_NAME):
 			embed = discord.Embed(title="Starten erfolgreich!", colour=discord.Colour.green())
 
 		else:
-			embed = discord.Embed(title="Starten fehlgeschlagen!", description=f"Server konnte nicht gestartet werden.\n{result.stdout}", colour=discord.Colour.red())
+			embed = discord.Embed(title="Starten fehlgeschlagen!", description=f"Server konnte nicht gestartet werden.", colour=discord.Colour.red())
 			
 		await interaction.edit_original_response(embed=embed)
 
 	@servercommand.command(name="shutdown", description="Fährt den Server herunter.")
 	async def sshutdown(self, interaction: discord.Interaction, seconds: int=None, message: str=None):
+		if not is_application_running(PALWORLD_APPLICATION_NAME) and not is_service_running(PALWORLD_SERVICE_NAME):
+			await interaction.response.send_message(embed=discord.Embed(title="Server läuft nicht."))
+			return
 		embed = discord.Embed(title="Server herunterfahren", description=f"Bist du dir sicher, dass du den Server {f'in {seconds} Sekunden ' if seconds != None else ''}{f'mit der Nachricht {message} ' if message != None else ''}herunterfahren möchtest?", color=discord.Colour.yellow())
 		view = ShutdownConfirmationView(seconds, message)
 		await interaction.response.send_message(embed=embed, view=view)

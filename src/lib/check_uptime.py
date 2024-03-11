@@ -1,4 +1,5 @@
 import socket, psutil
+import subprocess
 
 def udp_ping(ip, port):
   """
@@ -31,6 +32,21 @@ def udp_ping(ip, port):
   finally:
     sock.close()
 
+def tcp_ping(ip, port):
+  # Create a socket
+  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+  try:
+    # Connect to the host:port
+    sock.connect((ip, port))
+    print(f"Host {ip} is reachable on port {port}.")
+    return True
+  except socket.timeout:
+    print("Timeout")
+    return False
+  finally:
+    # Close the socket
+    sock.close()
 
 def is_application_running(name):
   """
@@ -48,3 +64,13 @@ def is_application_running(name):
     if process.name() == name:
       return True
   return False
+
+def is_service_running(service_name):
+    try:
+        output = subprocess.check_output("systemctl is-active " + service_name, shell=True)
+        if output == b'active\n':
+            return True
+        else:
+            return False
+    except subprocess.CalledProcessError:
+        return False
