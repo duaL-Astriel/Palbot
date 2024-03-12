@@ -1,9 +1,9 @@
+import subprocess
+import sys
 import discord
 from discord.ext import commands, tasks
 from discord.app_commands import CommandTree
 from .config import *
-
-from .backup import zip_and_backup_palworld
 from ..cogs import EXTENSIONS
 
 class PalBot(commands.Bot):
@@ -30,7 +30,6 @@ class PalBot(commands.Bot):
 
 	
 	
-	# @tasks.loop(hours=1)
-	# async def backuploop(self):
-	# 	await zip_and_backup_palworld()
-		
+	@tasks.loop(hours=1)
+	async def backuploop(self):
+		await subprocess.Popen(["Z:\\scripts\\Palworld\\backup-palworld-save.ps1"], stdout=sys.stdout)
