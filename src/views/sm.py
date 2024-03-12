@@ -16,7 +16,7 @@ class ShutdownConfirmationView(View):
 	
 	@button(label="Bestätigen", style=discord.ButtonStyle.green)
 	async def sconfirmation(self, interaction: discord.Interaction, button: Button):
-		await interaction.response.edit_message(embed=discord.Embed(title="Bitte warten", description="Server wird heruntergefahren."), view=None)
+		await interaction.response.edit_message(embed=discord.Embed(title="Bitte warten", description="Server wird heruntergefahren."), color=discord.Colour.yellow(), view=None)
 		
 		try:
 			rcon_client = Rcon_Client
@@ -27,18 +27,18 @@ class ShutdownConfirmationView(View):
 			while waiting_counter != 0:
 				if not is_application_running(PALWORLD_APPLICATION_NAME) and not is_service_running(PALWORLD_SERVICE_NAME):
 					print("Successfully shut down server.")
-					await interaction.edit_original_response(embed=discord.Embed(title="Erfolgreich!", description="Server wurde erfolgreich heruntergefahren."), view=None)
+					await interaction.edit_original_response(embed=discord.Embed(title="Erfolgreich!", description="Server wurde erfolgreich heruntergefahren.", color=discord.Colour.green()), view=None)
 					return
 				await asyncio.sleep(1)
 				waiting_counter -= 1
-			await interaction.edit_original_response(embed=discord.Embed(title="Fehlgeschlagen!", description="Timeout beim Herunterfahren."), view=None)	
+			await interaction.edit_original_response(embed=discord.Embed(title="Fehlgeschlagen!", description="Timeout beim Herunterfahren.", color=discord.Colour.red()), view=None)	
 				
 		except Exception as e:
 			print(f"Unable to shutdown game server: ")
 			traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-			await interaction.edit_original_response(embed=discord.Embed(title="Fehlgeschlagen!", description="Server konnte nicht heruntergefahren werden."), view=None)
+			await interaction.edit_original_response(embed=discord.Embed(title="Fehlgeschlagen!", description="Server konnte nicht heruntergefahren werden.", color=discord.Colour.red()), view=None)
 			return
 	
 	@button(label="Abbrechen", style=discord.ButtonStyle.danger)
 	async def sdenied(self, interaction: discord.Interaction, button: Button):
-		await interaction.response.edit_message(embed=discord.Embed(title="Abgebrochen", description="Shutdown vom Benutzer abgebrochen."), view=None)
+		await interaction.response.edit_message(embed=discord.Embed(title="Abgebrochen", description="Shutdown vom Benutzer abgebrochen.", color=discord.Colour.blurple()), view=None)
