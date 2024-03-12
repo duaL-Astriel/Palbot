@@ -1,4 +1,8 @@
 import os
+import pathlib
+from dotenv import load_dotenv
+path = str(pathlib.Path(__file__).parents[2])
+load_dotenv(path+"/.env")
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DISCORD_ADMIN_USERNAMES = os.getenv("DISCORD_ADMIN_USERNAMES")

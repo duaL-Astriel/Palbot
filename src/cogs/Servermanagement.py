@@ -44,18 +44,19 @@ class ServerManagementCog(commands.Cog):
 		
 		await interaction.followup.send(embed=discord.Embed(title="Bitte warten", description="Server wird gestartet.", color=discord.Colour.blue()))
 		terminal(start_command)
-		await asyncio.sleep(float(10))
 
-		if is_application_running(PALWORLD_APPLICATION_NAME) or is_service_running(PALWORLD_SERVICE_NAME):
-			embed = discord.Embed(title="Starten erfolgreich!", colour=discord.Colour.green())
-
-		else:
-			embed = discord.Embed(title="Starten fehlgeschlagen!", description=f"Server konnte nicht gestartet werden.", colour=discord.Colour.red())
+		waiting_counter = 30
+		while waiting_counter != 0:
+			if is_application_running(PALWORLD_APPLICATION_NAME) or is_service_running(PALWORLD_SERVICE_NAME):
+				await interaction.edit_original_response(embed=discord.Embed(title="Starten erfolgreich!", colour=discord.Colour.green()))
+				return
+			await asyncio.sleep(1)
+			waiting_counter -= 1
 			
-		await interaction.edit_original_response(embed=embed)
+		await interaction.edit_original_response(embed=discord.Embed(title="Starten fehlgeschlagen!", description=f"Server konnte nicht gestartet werden.", colour=discord.Colour.red()))
 
 	@servercommand.command(name="shutdown", description="Fährt den Server herunter.")
-	async def sshutdown(self, interaction: discord.Interaction, seconds: int=None, message: str=None):
+	async def sshutdown(self, interaction: discord.Interaction, seconds: int = 10, message: str = " "):
 		if not is_application_running(PALWORLD_APPLICATION_NAME) and not is_service_running(PALWORLD_SERVICE_NAME):
 			await interaction.response.send_message(embed=discord.Embed(title="Server läuft nicht."))
 			return

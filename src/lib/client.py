@@ -1,35 +1,36 @@
 #from dotenv import load_dotenv
-from rcon import Client
-from .check_uptime import tcp_ping
+import asyncio
+import base64
+from gamercon_async import GameRCON, GameRCONBase64
+from .config import PALWORLD_RCON_HOST, PALWORLD_RCON_PASSWORD, PALWORLD_RCON_PORT
 
-ENV_PATH = "/home/steam/.env"
-TIMOUT_DURATION = 10
-HOST="127.0.0.1"
-PASSWORD="Palworld"
-PORT=25575
+#ENV_PATH = "/home/steam/.env"
 
-class Console:
-    # def __init__(self):
-    #     self.GENERIC_ERROR = "Unable to process your request (server did not respond)"
-    #     print("Setting up RCON connection")
-    #     if tcp_ping(HOST,PORT):
-    #         print("Connection successful.")
-    #     else:
-    #         print("Connection failed.")
-    #     #load_dotenv(ENV_PATH)
+class Rcon_Client:
+    def __init__(self):
+        self.timeout = 10
 
-    def open(self) -> Client:
-        return Client(
-            host=HOST,
-            password=PASSWORD,
-            port=PORT,
-            timeout=TIMOUT_DURATION
-        )
+    def is_base64_encoded(self, s):
+        try:
+            return base64.b64encode(base64.b64decode(s)).decode() == s
+        except Exception:
+            return False
+
+    async def rcon_command(self, command: str):
+
+        async def send_command(ProtocolClass):
+            async with ProtocolClass(PALWORLD_RCON_HOST, PALWORLD_RCON_PORT, PALWORLD_RCON_PASSWORD) as pc:
+                return await asyncio.wait_for(pc.send(command), timeout=10)
+
+        response = await send_command(GameRCON)
+        
+        if self.is_base64_encoded(self, response):
+            response = await send_command(GameRCONBase64)
+
+        return response
     
-    def shutdown(self, seconds: str, message: str):
+    async def shutdown(self, seconds=10, message="No reason specified"):
         print(f"Schedule server shutdown in {seconds} seconds")
-        console = self.open()
-        # res = console.run(f"Shutdown {seconds} {message}")
-        res = console.run(command=f"Shutdown {seconds} {message}")
-        console.close()
-        return res if res else self.GENERIC_ERROR
+        formated_message = message.replace(" ", "\u001f")
+        response = await self.rcon_command(f"Shutdown {seconds} {formated_message}")
+        return response

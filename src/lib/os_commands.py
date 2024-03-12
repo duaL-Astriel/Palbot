@@ -1,6 +1,6 @@
 import os
 
-def shutdown_application(application_name: str):
+async def shutdown_application(application_name: str):
     # Stop the service
     os.system(f"net stop {application_name}")
 
