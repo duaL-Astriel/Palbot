@@ -16,7 +16,7 @@ class ShutdownConfirmationView(View):
 	
 	@button(label="Bestätigen", style=discord.ButtonStyle.green)
 	async def sconfirmation(self, interaction: discord.Interaction, button: Button):
-		await interaction.response.edit_message(embed=discord.Embed(title="Bitte warten", description="Server wird heruntergefahren."), color=discord.Colour.yellow(), view=None)
+		await interaction.response.edit_message(embed=discord.Embed(title="Bitte warten", description="Server wird heruntergefahren.", color=discord.Colour.yellow()), view=None)
 		
 		try:
 			rcon_client = Rcon_Client

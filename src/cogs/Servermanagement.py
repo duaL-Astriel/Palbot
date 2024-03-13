@@ -60,7 +60,7 @@ class ServerManagementCog(commands.Cog):
 		if not is_application_running(PALWORLD_APPLICATION_NAME) and not is_service_running(PALWORLD_SERVICE_NAME):
 			await interaction.response.send_message(embed=discord.Embed(title="Server läuft nicht."))
 			return
-		embed = discord.Embed(title="Server herunterfahren", description=f"Bist du dir sicher, dass du den Server {f'in {seconds} Sekunden ' if seconds != None else ''}{f'mit der Nachricht {message} ' if message != None else ''}herunterfahren möchtest?", color=discord.Colour.yellow())
+		embed = discord.Embed(title="Server herunterfahren", description=f"Bist du dir sicher, dass du den Server {f'in {seconds} Sekunden ' if seconds != None else ''}{f'mit der Nachricht {message} ' if message != None else ''}herunterfahren möchtest?", color=discord.Colour.blurple())
 		view = ShutdownConfirmationView(seconds, message)
 		await interaction.response.send_message(embed=embed, view=view)
 		view.message = await interaction.original_response()
